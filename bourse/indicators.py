@@ -75,6 +75,14 @@ def momentum(close: pd.Series, periode: int) -> pd.Series:
     return close.pct_change(periode) * 100
 
 
+def rsi(close: pd.Series, periode: int) -> pd.Series:
+    """RSI de Wilder, de 0 à 100."""
+    variation = close.diff()
+    hausse = wilder(variation.clip(lower=0), periode)
+    baisse = wilder(-variation.clip(upper=0), periode)
+    return 100 - 100 / (1 + hausse / baisse.replace(0, np.nan))
+
+
 def adx(high: pd.Series, low: pd.Series, close: pd.Series, periode: int) -> pd.Series:
     hausse = high.diff()
     baisse = -low.diff()
@@ -120,4 +128,7 @@ def calculer(df: pd.DataFrame, p: dict, f: dict | None = None) -> pd.DataFrame:
     out = out.join(parabolic_sar(df["High"], df["Low"], p["sar_pas"], p["sar_max"]))
     out["momentum"] = momentum(df["Close"], p["momentum_periode"])
     out["adx"] = adx(df["High"], df["Low"], df["Close"], p["adx_periode"])
+    out["rsi"] = rsi(df["Close"], p["rsi_periode"])
+    for n in p["mm_graphique"]:
+        out[f"mm{n}"] = df["Close"].rolling(n).mean()
     return out

@@ -36,6 +36,7 @@ def _ligne(a: dict) -> dict:
         "Momentum 3 mois": f"{d['f_momentum']:+.1f} %".replace(".", ","),
         "Repli vs plus haut 3 mois": f"{d['f_repli']:.1f} %".replace(".", ","),
         "Volatilité 3 mois": f"{_fmt(d['f_volatilite'], 1)} %",
+        "RSI (14)": _fmt(d["rsi"], 0),
         "État court terme": LIBELLES[a["etat"]],
     }
 

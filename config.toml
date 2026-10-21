@@ -201,6 +201,9 @@ sar_pas = 0.02
 sar_max = 0.2
 momentum_periode = 10
 adx_periode = 14
+rsi_periode = 14
+# Moyennes mobiles tracées sur le graphique (sans effet sur les signaux).
+mm_graphique = [20, 50]
 
 [regles]
 adx_tendance = 25

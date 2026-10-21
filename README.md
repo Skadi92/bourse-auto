@@ -24,7 +24,7 @@ Les indicateurs standards (MACD 12/26/9, Bollinger 20, SAR, momentum 10 jours, A
 
 ### Mail
 
-Un mail n'est envoyé que les jours où au moins un signal ACHAT ou VENTE apparaît. Seuls les cinq signaux les plus forts sont détaillés. Les autres signaux du jour sont cités ensuite. Les instruments marqués `toujours = true` dans `config.toml` (les ETF WPEA, CW8 et QQQ) figurent dans chaque mail envoyé, dans une section « ETF suivis », même sans signal. Chaque instrument est présenté avec ses statistiques à gauche et un graphique sur un an à droite (cours, MM200, bandes de Bollinger, SAR lent, signaux, MACD lent). Le paramètre `force_min_achat` permet d'écarter les achats les plus faibles ; les ventes passent toujours. Le fichier `etat/etat.json`, mis à jour par le workflow, évite les doublons.
+Un mail n'est envoyé que les jours où au moins un signal ACHAT ou VENTE apparaît. Seuls les cinq signaux les plus forts sont détaillés. Les autres signaux du jour sont cités ensuite. Les instruments marqués `toujours = true` dans `config.toml` (les ETF WPEA, CW8 et QQQ) figurent dans chaque mail envoyé, dans une section « ETF suivis », même sans signal. Chaque instrument est présenté avec ses statistiques à gauche et un graphique sur trois mois à droite : cours, MM20, MM50, bandes de Bollinger, SAR (0,02) et signaux, puis MACD (12, 26, 9) avec sa ligne de signal, puis RSI (14). Le graphique utilise les indicateurs standards pour lire le court terme ; les alertes restent pilotées par le régime de fond. Le paramètre `force_min_achat` permet d'écarter les achats les plus faibles ; les ventes passent toujours. Le fichier `etat/etat.json`, mis à jour par le workflow, évite les doublons.
 
 ### Résultats du backtest (20 ans, 44 actifs, frais de 0,10 % par ordre)
 

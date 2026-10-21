@@ -1,7 +1,8 @@
 """Graphique de tendance au format PNG, inséré dans le mail d'alerte.
 
-Panneau haut : cours, moyenne mobile longue, bandes de Bollinger, SAR et signaux ACHAT / VENTE.
-Panneau bas : histogramme MACD (positif au-dessus de zéro, négatif en dessous).
+Panneau haut : cours, MM20, MM50, bandes de Bollinger, SAR (0,02) et signaux ACHAT / VENTE.
+Panneau milieu : MACD (12, 26, 9), ligne MACD et ligne de signal.
+Panneau bas : RSI, avec les seuils de 30 et 70.
 """
 
 import io
@@ -18,14 +19,14 @@ from .signals import ACHAT, VENTE  # noqa: E402
 
 # Palette de référence (fond clair : les clients mail n'adaptent pas les images au mode sombre).
 SURFACE = "#fcfcfb"
-ENCRE = "#0b0b0b"
 ENCRE_SECONDAIRE = "#52514e"
 ATTENUE = "#898781"
 GRILLE = "#e1e0d9"
 AXE = "#c3c2b7"
-COURS = "#2a78d6"
-POSITIF = "#2a78d6"
-NEGATIF = "#e34948"
+SERIE_1 = "#2a78d6"  # bleu : cours, ligne MACD
+SERIE_2 = "#eb6834"  # orange : MM20, ligne de signal
+SERIE_3 = "#1baf7a"  # aqua : MM50 (en tirets, pour ne pas dépendre de la couleur)
+SERIE_RSI = "#6250d6"
 BON = "#0ca30c"
 CRITIQUE = "#d03b3b"
 
@@ -50,51 +51,65 @@ def _habiller(ax) -> None:
     ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}".replace(".", ",")))
 
 
-def graphique(df: pd.DataFrame, jours: int = 250) -> bytes:
-    """Renvoie le PNG des `jours` dernières séances (250 séances, environ un an)."""
-    d = df.iloc[-jours:]
-    x = d.index
-
-    fig, (haut, bas) = plt.subplots(
-        2, 1, figsize=(3.6, 2.5), dpi=200, sharex=True,
-        gridspec_kw={"height_ratios": [3, 1], "hspace": 0.28},
-    )
-    fig.patch.set_facecolor(SURFACE)
-    for ax in (haut, bas):
-        _habiller(ax)
-
-    haut.fill_between(x, d["bb_basse"], d["bb_haute"], color=COURS, alpha=0.10,
-                      linewidth=0, label="Bandes de Bollinger")
-    haut.plot(x, d["Close"], color=COURS, linewidth=1.2, label="Cours")
-    if "f_mm" in d:
-        haut.plot(x, d["f_mm"], color=ENCRE_SECONDAIRE, linewidth=0.8, linestyle=(0, (4, 2)),
-                  label="MM200")
-    # Le SAR lent est celui qui conditionne les signaux ; à défaut, le SAR standard.
-    sar, nom_sar = (d["f_sar"], "SAR lent") if "f_sar" in d else (d["sar"], "SAR")
-    haut.scatter(x, sar, s=0.8, color=ATTENUE, label=nom_sar)
-
-    achats, ventes = d[d["signal"] == ACHAT], d[d["signal"] == VENTE]
-    haut.scatter(achats.index, achats["Low"] * 0.985, marker="^", s=30, color=BON,
-                 edgecolors=SURFACE, linewidths=0.8, zorder=5, label="Achat")
-    haut.scatter(ventes.index, ventes["High"] * 1.015, marker="v", s=30, color=CRITIQUE,
-                 edgecolors=SURFACE, linewidths=0.8, zorder=5, label="Vente")
-
-    legende = haut.legend(loc="lower left", bbox_to_anchor=(0, 1.0), ncol=3, frameon=False,
-                          fontsize=6, handlelength=1.2, columnspacing=0.8, handletextpad=0.4,
-                          labelspacing=0.2,
-                          borderaxespad=0.2, labelcolor=ENCRE_SECONDAIRE)
-    for poignee in legende.legend_handles:
+def _legende(ax, ncol: int, dedans: bool = False) -> None:
+    """Légende au-dessus du panneau, ou dans son coin haut gauche pour les petits panneaux."""
+    place = {"loc": "upper left", "bbox_to_anchor": (0, 1.08)} if dedans else {
+        "loc": "lower left", "bbox_to_anchor": (0, 1.0)}
+    leg = ax.legend(**place, ncol=ncol, frameon=False,
+                    fontsize=6, handlelength=1.2, columnspacing=0.8, handletextpad=0.4,
+                    labelspacing=0.2, borderaxespad=0.2, labelcolor=ENCRE_SECONDAIRE)
+    for poignee in leg.legend_handles:
         if hasattr(poignee, "set_sizes"):
             poignee.set_sizes([14])
 
-    # Le MACD lent est celui qui conditionne les signaux ; à défaut, le MACD standard.
-    lent = "f_macd_hist" in d
-    hist = d["f_macd_hist"] if lent else d["macd_hist"]
-    bas.bar(x, hist, width=1.0, linewidth=0, color=[POSITIF if v >= 0 else NEGATIF for v in hist])
-    bas.axhline(0, color=AXE, linewidth=0.8)
-    bas.set_title("Histogramme MACD lent" if lent else "Histogramme MACD", loc="left",
-                  fontsize=6, color=ENCRE_SECONDAIRE, pad=2)
-    bas.xaxis.set_major_locator(mdates.MonthLocator(bymonth=[1, 4, 7, 10]))
+
+def graphique(df: pd.DataFrame, jours: int = 63) -> bytes:
+    """Renvoie le PNG des `jours` dernières séances (63 séances, environ trois mois)."""
+    d = df.iloc[-jours:]
+    x = d.index
+
+    fig, (haut, milieu, bas) = plt.subplots(
+        3, 1, figsize=(3.6, 3.2), dpi=200, sharex=True,
+        gridspec_kw={"height_ratios": [3, 1.2, 1], "hspace": 0.12},
+    )
+    fig.patch.set_facecolor(SURFACE)
+    for ax in (haut, milieu, bas):
+        _habiller(ax)
+
+    haut.fill_between(x, d["bb_basse"], d["bb_haute"], color=SERIE_1, alpha=0.10,
+                      linewidth=0, label="Bollinger")
+    haut.plot(x, d["Close"], color=SERIE_1, linewidth=1.2, label="Cours")
+    if "mm20" in d:
+        haut.plot(x, d["mm20"], color=SERIE_2, linewidth=0.9, label="MM20")
+    if "mm50" in d:
+        haut.plot(x, d["mm50"], color=SERIE_3, linewidth=0.9, linestyle=(0, (4, 2)), label="MM50")
+    haut.scatter(x, d["sar"], s=1.5, color=ATTENUE, label="SAR")
+
+    achats, ventes = d[d["signal"] == ACHAT], d[d["signal"] == VENTE]
+    if len(achats):
+        haut.scatter(achats.index, achats["Low"] * 0.985, marker="^", s=30, color=BON,
+                     edgecolors=SURFACE, linewidths=0.8, zorder=5, label="Achat")
+    if len(ventes):
+        haut.scatter(ventes.index, ventes["High"] * 1.015, marker="v", s=30, color=CRITIQUE,
+                     edgecolors=SURFACE, linewidths=0.8, zorder=5, label="Vente")
+    _legende(haut, ncol=4)
+
+    milieu.plot(x, d["macd"], color=SERIE_1, linewidth=0.9, label="MACD (12, 26, 9)")
+    milieu.plot(x, d["macd_signal"], color=SERIE_2, linewidth=0.9, label="Signal")
+    milieu.axhline(0, color=AXE, linewidth=0.6)
+    bas_m, haut_m = milieu.get_ylim()
+    milieu.set_ylim(bas_m, haut_m + (haut_m - bas_m) * 0.45)  # marge haute pour la légende
+    _legende(milieu, ncol=2, dedans=True)
+
+    bas.axhspan(30, 70, color=SERIE_RSI, alpha=0.06, linewidth=0)
+    for seuil in (30, 70):
+        bas.axhline(seuil, color=AXE, linewidth=0.6, linestyle=(0, (2, 2)))
+    bas.plot(x, d["rsi"], color=SERIE_RSI, linewidth=0.9, label="RSI (14)")
+    bas.set_ylim(0, 115)  # marge haute pour la légende
+    bas.set_yticks([30, 70])
+    _legende(bas, ncol=1, dedans=True)
+
+    bas.xaxis.set_major_locator(mdates.MonthLocator())
     bas.xaxis.set_major_formatter(_format_mois)
 
     tampon = io.BytesIO()
