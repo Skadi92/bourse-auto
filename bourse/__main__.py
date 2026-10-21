@@ -6,7 +6,7 @@ import sys
 import tomllib
 from pathlib import Path
 
-from . import backtest, data, indicators, notifier, signals
+from . import backtest, charts, data, indicators, notifier, signals
 
 RACINE = Path(__file__).resolve().parent.parent
 FICHIER_ETAT = RACINE / "etat" / "etat.json"
@@ -21,6 +21,15 @@ def analyser_ticker(ticker: str, periode: str, cfg: dict):
     df = data.charger(ticker, periode)
     df = indicators.calculer(df, cfg["indicateurs"])
     return signals.evaluer(df, cfg["regles"])
+
+
+def tracer(df, ticker: str) -> bytes | None:
+    """Graphique de tendance ; un échec de rendu ne doit pas empêcher l'alerte."""
+    try:
+        return charts.graphique(df)
+    except Exception as e:
+        print(f"[AVERTISSEMENT] graphique {ticker} non généré : {e}", file=sys.stderr)
+        return None
 
 
 def lire_etat() -> dict:
@@ -60,6 +69,7 @@ def cmd_analyser(cfg: dict, essai: bool) -> int:
                 "ticker": ticker, "nom": nom, "date": date,
                 "signal": derniere["signal"], "etat": derniere["etat"],
                 "etat_precedent": connu.get("etat"), "donnees": derniere.to_dict(),
+                "graphique": tracer(df, ticker),
             })
         etat[ticker] = {"date": date, "etat": derniere["etat"], "signal": derniere["signal"]}
 
@@ -97,6 +107,7 @@ def cmd_test_mail(cfg: dict) -> int:
             "date": df.index[-1].strftime("%Y-%m-%d"),
             "signal": derniere["signal"], "etat": derniere["etat"],
             "etat_precedent": etat.get(ticker, {}).get("etat"), "donnees": derniere.to_dict(),
+            "graphique": tracer(df, ticker),
         })
     if not alertes:
         print("Aucune donnée disponible, mail non envoyé.", file=sys.stderr)

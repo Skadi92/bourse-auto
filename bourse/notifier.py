@@ -4,6 +4,7 @@ import os
 import smtplib
 import ssl
 from email.message import EmailMessage
+from email.utils import make_msgid
 from html import escape
 
 from .signals import ACHAT, LIBELLES, VENTE
@@ -55,8 +56,15 @@ def construire(alertes: list[dict], prefixe: str, objet: str | None = None) -> E
     msg.set_content(f"{texte}\n\n{AVERTISSEMENT}\n")
 
     couleur = {ACHAT: "#1a7f37", VENTE: "#cf222e"}
-    blocs = []
+    blocs, images = [], []
     for a, l in zip(alertes, lignes):
+        image = ""
+        if a.get("graphique"):
+            cid = make_msgid(domain="bourse-auto")
+            images.append((cid, a["graphique"]))
+            image = (f"<img src='cid:{cid[1:-1]}' width='600' alt='Graphique de tendance "
+                     f"{escape(a['ticker'])}' style='display:block;max-width:100%;height:auto;"
+                     f"margin-top:8px'>")
         teinte = couleur.get(a["signal"], "#57606a")
         cellules = "".join(
             f"<tr><td style='padding:2px 12px 2px 0;color:#57606a'>{escape(k)}</td>"
@@ -67,7 +75,7 @@ def construire(alertes: list[dict], prefixe: str, objet: str | None = None) -> E
         blocs.append(
             f"<div style='border-left:4px solid {teinte};padding:8px 12px;margin:0 0 16px'>"
             f"<div style='font-weight:600;font-size:15px'>{escape(l['Instrument'])}</div>"
-            f"<table style='font-size:13px;border-collapse:collapse'>{cellules}</table></div>"
+            f"<table style='font-size:13px;border-collapse:collapse'>{cellules}</table>{image}</div>"
         )
     msg.add_alternative(
         "<html><body style='font-family:Segoe UI,Arial,sans-serif;color:#1f2328'>"
@@ -75,6 +83,9 @@ def construire(alertes: list[dict], prefixe: str, objet: str | None = None) -> E
         + f"<p style='font-size:12px;color:#57606a'>{escape(AVERTISSEMENT)}</p></body></html>",
         subtype="html",
     )
+    html = msg.get_payload()[1]
+    for cid, png in images:
+        html.add_related(png, maintype="image", subtype="png", cid=cid)
     return msg
 
 

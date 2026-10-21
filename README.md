@@ -27,7 +27,7 @@ Signaux :
 - **ACHAT** : retournement haussier, ou entrée en hausse confirmée ;
 - **VENTE** : retournement baissier, entrée en baisse confirmée, ou passage du SAR au-dessus du prix (stop suiveur, désactivable).
 
-Un mail regroupe toutes les alertes d'une séance. Il n'est envoyé que s'il y a un signal, ou un changement d'état quand l'option `changements_etat` est activée. Le fichier `etat/etat.json`, mis à jour par le workflow, évite les doublons.
+Un mail regroupe toutes les alertes d'une séance. Chaque actif y est accompagné d'un graphique des six derniers mois : cours, bandes de Bollinger, SAR, signaux passés et histogramme MACD. Il n'est envoyé que s'il y a un signal, ou un changement d'état quand l'option `changements_etat` est activée. Le fichier `etat/etat.json`, mis à jour par le workflow, évite les doublons.
 
 ## Utilisation locale
 
