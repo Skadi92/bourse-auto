@@ -10,7 +10,7 @@ on:
       commande:
         description: "Commande à exécuter"
         type: choice
-        options: [analyser, backtest]
+        options: [analyser, backtest, test-mail]
         default: analyser
       essai:
         description: "Mode essai (analyser : n'envoie pas le mail, ne modifie pas l'état)"
@@ -52,6 +52,14 @@ jobs:
       - name: Backtest
         if: inputs.commande == 'backtest'
         run: python -m bourse backtest
+
+      - name: Mail de test
+        if: inputs.commande == 'test-mail'
+        env:
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+        run: python -m bourse test-mail
 
       - name: Sauvegarde de l'état
         if: github.event_name == 'schedule' || (inputs.commande == 'analyser' && !inputs.essai)

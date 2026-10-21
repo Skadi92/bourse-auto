@@ -37,7 +37,7 @@ def _ligne(a: dict) -> dict:
     }
 
 
-def construire(alertes: list[dict], prefixe: str) -> EmailMessage:
+def construire(alertes: list[dict], prefixe: str, objet: str | None = None) -> EmailMessage:
     nb_achat = sum(a["signal"] == ACHAT for a in alertes)
     nb_vente = sum(a["signal"] == VENTE for a in alertes)
     resume = []
@@ -48,7 +48,7 @@ def construire(alertes: list[dict], prefixe: str) -> EmailMessage:
     if not resume:
         resume.append(f"{len(alertes)} changement(s) d'état")
     msg = EmailMessage()
-    msg["Subject"] = f"{prefixe} {', '.join(resume)} ({alertes[0]['date']})"
+    msg["Subject"] = f"{prefixe} {objet or ', '.join(resume)} ({alertes[0]['date']})"
 
     lignes = [_ligne(a) for a in alertes]
     texte = "\n\n".join("\n".join(f"{k} : {v}" for k, v in l.items()) for l in lignes)

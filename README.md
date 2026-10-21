@@ -47,7 +47,8 @@ Les instruments, les paramètres et les seuils se règlent dans `config.toml`. L
 1. Activez la validation en deux étapes sur le compte Gmail, puis créez un mot de passe d'application (Compte Google, Sécurité, Mots de passe des applications).
 2. Créez un dépôt **privé** sur GitHub et poussez-y le projet.
 3. Dans Settings, Secrets and variables, Actions, ajoutez les secrets suivants : `GMAIL_USER` (adresse Gmail), `GMAIL_APP_PASSWORD` (mot de passe d'application) et, si les alertes doivent partir vers une autre adresse, `MAIL_TO`.
-4. Dans l'onglet Actions, lancez « Alertes bourse » à la main avec `essai` coché, puis sans, pour valider l'envoi.
+4. Dans l'onglet Actions, lancez « Alertes bourse » à la main avec la commande `test-mail`. Elle envoie un mail au format réel avec l'état actuel de chaque instrument, sans modifier l'état mémorisé, ce qui valide les secrets Gmail même sans signal du jour.
+5. Lancez ensuite la commande `analyser` avec `essai` coché, puis sans.
 
 Le workflow s'exécute du lundi au vendredi à 22 h 30 UTC. Une bougie de la séance en cours n'est jamais analysée.
 

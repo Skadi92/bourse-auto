@@ -80,6 +80,33 @@ def cmd_analyser(cfg: dict, essai: bool) -> int:
     return 1 if echecs == len(cfg["instruments"]) else 0
 
 
+def cmd_test_mail(cfg: dict) -> int:
+    """Envoie un mail au format réel avec l'état actuel de chaque instrument, sans toucher à l'état."""
+    etat = lire_etat()
+    alertes = []
+    for inst in cfg["instruments"]:
+        ticker = inst["ticker"]
+        try:
+            df = analyser_ticker(ticker, cfg["donnees"]["periode_analyse"], cfg)
+        except Exception as e:
+            print(f"[ERREUR] {ticker} : {e}", file=sys.stderr)
+            continue
+        derniere = df.iloc[-1]
+        alertes.append({
+            "ticker": ticker, "nom": inst.get("nom", ticker),
+            "date": df.index[-1].strftime("%Y-%m-%d"),
+            "signal": derniere["signal"], "etat": derniere["etat"],
+            "etat_precedent": etat.get(ticker, {}).get("etat"), "donnees": derniere.to_dict(),
+        })
+    if not alertes:
+        print("Aucune donnée disponible, mail non envoyé.", file=sys.stderr)
+        return 1
+    msg = notifier.construire(alertes, cfg["alertes"]["objet_prefixe"], "Test d'envoi, état actuel")
+    notifier.envoyer(msg)
+    print(f"Mail de test envoyé à {msg['To']} ({len(alertes)} instrument(s)).")
+    return 0
+
+
 def cmd_backtest(cfg: dict, periode: str | None) -> int:
     periode = periode or cfg["donnees"]["periode_backtest"]
     pct = lambda x: f"{x * 100:7.1f} %"
@@ -109,11 +136,14 @@ def main() -> int:
     a.add_argument("--essai", action="store_true", help="affiche le mail sans l'envoyer ni modifier l'état")
     b = sp.add_parser("backtest", help="rejoue les règles sur l'historique")
     b.add_argument("--periode", help="ex. 5y, 10y, max")
+    sp.add_parser("test-mail", help="envoie un mail de test avec l'état actuel des instruments")
     args = p.parse_args()
 
     cfg = charger_config(args.config)
     if args.commande == "analyser":
         return cmd_analyser(cfg, args.essai)
+    if args.commande == "test-mail":
+        return cmd_test_mail(cfg)
     return cmd_backtest(cfg, args.periode)
 
 
