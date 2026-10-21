@@ -1,0 +1,56 @@
+# Configuration de l'outil d'alertes Bourse-auto.
+# Les tickers suivent la nomenclature Yahoo Finance (suffixe .PA pour Euronext Paris).
+
+[[instruments]]
+ticker = "CW8.PA"
+nom = "Amundi MSCI World (ETF)"
+
+[[instruments]]
+ticker = "MC.PA"
+nom = "LVMH"
+
+[[instruments]]
+ticker = "QQQ"
+nom = "Invesco QQQ, Nasdaq-100 (ETF)"
+
+[donnees]
+# Historique chargé pour l'analyse quotidienne (marge de chauffe des indicateurs incluse).
+periode_analyse = "2y"
+# Historique chargé pour le backtest.
+periode_backtest = "10y"
+
+[indicateurs]
+macd_rapide = 12
+macd_lente = 26
+macd_signal = 9
+bollinger_periode = 20
+bollinger_ecarts = 2.0
+sar_pas = 0.02
+sar_max = 0.2
+momentum_periode = 10
+adx_periode = 14
+
+[regles]
+# ADX au-dessus duquel le marché est considéré en tendance.
+adx_tendance = 25
+# ADX en dessous duquel le marché peut être considéré stable.
+adx_range = 20
+# Score directionnel minimal (sur 4) pour qualifier une hausse ou une baisse.
+score_tendance = 3
+# Un retournement exige un score opposé d'au moins cette valeur dans la fenêtre précédente.
+score_retournement = 2
+fenetre_retournement = 10
+# Stabilité : largeur des bandes de Bollinger sous ce quantile de son historique récent.
+quantile_compression = 0.3
+fenetre_compression = 120
+# Le passage du SAR au-dessus du prix déclenche une sortie (stop suiveur).
+sortie_sur_sar = true
+
+[backtest]
+# Frais par transaction (achat ou vente), en points de base : 10 = 0,10 %.
+frais_bps = 10
+
+[alertes]
+# true : alerte aussi sur tout changement d'état (stabilité, etc.), pas seulement ACHAT/VENTE.
+changements_etat = true
+objet_prefixe = "[Bourse-auto]"
