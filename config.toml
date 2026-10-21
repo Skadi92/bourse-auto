@@ -2,6 +2,7 @@
 # Les tickers suivent la nomenclature Yahoo Finance (suffixe .PA pour Euronext Paris).
 # Composition du CAC 40 vérifiée en octobre 2026 (dernière modification le 22 décembre 2025 :
 # entrée d'Eiffage, sortie d'Edenred). Elle est revue chaque trimestre par Euronext.
+# toujours = true : l'instrument figure dans chaque mail envoyé, même sans signal.
 # ArcelorMittal est suivi sur Amsterdam (MT.AS) : la ligne Paris n'est plus alimentée sur Yahoo.
 
 [[instruments]]
@@ -11,14 +12,17 @@ nom = "Indice CAC 40"
 [[instruments]]
 ticker = "WPEA.PA"
 nom = "iShares MSCI World Swap PEA (ETF)"
+toujours = true
 
 [[instruments]]
 ticker = "CW8.PA"
 nom = "Amundi MSCI World (ETF)"
+toujours = true
 
 [[instruments]]
 ticker = "QQQ"
 nom = "Invesco QQQ, Nasdaq-100 (ETF)"
+toujours = true
 
 [[instruments]]
 ticker = "AC.PA"

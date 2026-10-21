@@ -11,6 +11,7 @@ import matplotlib
 matplotlib.use("Agg")
 import matplotlib.dates as mdates  # noqa: E402
 import matplotlib.pyplot as plt  # noqa: E402
+from matplotlib.ticker import FuncFormatter  # noqa: E402
 import pandas as pd  # noqa: E402
 
 from .signals import ACHAT, VENTE  # noqa: E402
@@ -44,8 +45,9 @@ def _habiller(ax) -> None:
     ax.spines["bottom"].set_color(AXE)
     ax.grid(axis="y", color=GRILLE, linewidth=0.6)
     ax.set_axisbelow(True)
-    ax.tick_params(colors=ATTENUE, labelsize=8, length=0)
+    ax.tick_params(colors=ATTENUE, labelsize=6.5, length=0, pad=2)
     ax.yaxis.tick_right()
+    ax.yaxis.set_major_formatter(FuncFormatter(lambda v, _: f"{v:g}".replace(".", ",")))
 
 
 def graphique(df: pd.DataFrame, jours: int = 250) -> bytes:
@@ -54,8 +56,8 @@ def graphique(df: pd.DataFrame, jours: int = 250) -> bytes:
     x = d.index
 
     fig, (haut, bas) = plt.subplots(
-        2, 1, figsize=(7, 3.8), dpi=150, sharex=True,
-        gridspec_kw={"height_ratios": [3, 1], "hspace": 0.18},
+        2, 1, figsize=(3.6, 2.5), dpi=200, sharex=True,
+        gridspec_kw={"height_ratios": [3, 1], "hspace": 0.28},
     )
     fig.patch.set_facecolor(SURFACE)
     for ax in (haut, bas):
@@ -63,31 +65,27 @@ def graphique(df: pd.DataFrame, jours: int = 250) -> bytes:
 
     haut.fill_between(x, d["bb_basse"], d["bb_haute"], color=COURS, alpha=0.10,
                       linewidth=0, label="Bandes de Bollinger")
-    haut.plot(x, d["Close"], color=COURS, linewidth=1.6, label="Cours")
+    haut.plot(x, d["Close"], color=COURS, linewidth=1.2, label="Cours")
     if "f_mm" in d:
-        haut.plot(x, d["f_mm"], color=ENCRE_SECONDAIRE, linewidth=1.0, linestyle=(0, (4, 2)),
+        haut.plot(x, d["f_mm"], color=ENCRE_SECONDAIRE, linewidth=0.8, linestyle=(0, (4, 2)),
                   label="MM200")
     # Le SAR lent est celui qui conditionne les signaux ; à défaut, le SAR standard.
     sar, nom_sar = (d["f_sar"], "SAR lent") if "f_sar" in d else (d["sar"], "SAR")
-    haut.scatter(x, sar, s=2, color=ATTENUE, label=nom_sar)
+    haut.scatter(x, sar, s=0.8, color=ATTENUE, label=nom_sar)
 
     achats, ventes = d[d["signal"] == ACHAT], d[d["signal"] == VENTE]
-    haut.scatter(achats.index, achats["Low"] * 0.985, marker="^", s=46, color=BON,
+    haut.scatter(achats.index, achats["Low"] * 0.985, marker="^", s=30, color=BON,
                  edgecolors=SURFACE, linewidths=0.8, zorder=5, label="Achat")
-    haut.scatter(ventes.index, ventes["High"] * 1.015, marker="v", s=46, color=CRITIQUE,
+    haut.scatter(ventes.index, ventes["High"] * 1.015, marker="v", s=30, color=CRITIQUE,
                  edgecolors=SURFACE, linewidths=0.8, zorder=5, label="Vente")
 
-    dernier = d["Close"].iloc[-1]
-    haut.annotate(f"{dernier:,.2f}".replace(",", " ").replace(".", ","),
-                  xy=(x[-1], dernier), xytext=(4, 0), textcoords="offset points",
-                  va="center", fontsize=8, color=ENCRE, fontweight="bold")
-
-    legende = haut.legend(loc="lower left", bbox_to_anchor=(0, 1.0), ncol=6, frameon=False,
-                          fontsize=7.5, handlelength=1.4, columnspacing=1.2,
+    legende = haut.legend(loc="lower left", bbox_to_anchor=(0, 1.0), ncol=3, frameon=False,
+                          fontsize=6, handlelength=1.2, columnspacing=0.8, handletextpad=0.4,
+                          labelspacing=0.2,
                           borderaxespad=0.2, labelcolor=ENCRE_SECONDAIRE)
     for poignee in legende.legend_handles:
         if hasattr(poignee, "set_sizes"):
-            poignee.set_sizes([30])
+            poignee.set_sizes([14])
 
     # Le MACD lent est celui qui conditionne les signaux ; à défaut, le MACD standard.
     lent = "f_macd_hist" in d
@@ -95,11 +93,11 @@ def graphique(df: pd.DataFrame, jours: int = 250) -> bytes:
     bas.bar(x, hist, width=1.0, linewidth=0, color=[POSITIF if v >= 0 else NEGATIF for v in hist])
     bas.axhline(0, color=AXE, linewidth=0.8)
     bas.set_title("Histogramme MACD lent" if lent else "Histogramme MACD", loc="left",
-                  fontsize=7.5, color=ENCRE_SECONDAIRE, pad=3)
-    bas.xaxis.set_major_locator(mdates.MonthLocator(bymonth=[1, 3, 5, 7, 9, 11]))
+                  fontsize=6, color=ENCRE_SECONDAIRE, pad=2)
+    bas.xaxis.set_major_locator(mdates.MonthLocator(bymonth=[1, 4, 7, 10]))
     bas.xaxis.set_major_formatter(_format_mois)
 
     tampon = io.BytesIO()
-    fig.savefig(tampon, format="png", facecolor=SURFACE, bbox_inches="tight", pad_inches=0.12)
+    fig.savefig(tampon, format="png", facecolor=SURFACE, bbox_inches="tight", pad_inches=0.06)
     plt.close(fig)
     return tampon.getvalue()

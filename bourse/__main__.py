@@ -64,7 +64,7 @@ def analyser_tous(cfg: dict) -> tuple[list[dict], int]:
             continue
         d = df.iloc[-1]
         resultats.append({
-            "ticker": ticker, "nom": inst.get("nom", ticker),
+            "ticker": ticker, "nom": inst.get("nom", ticker), "toujours": inst.get("toujours", False),
             "date": df.index[-1].strftime("%Y-%m-%d"),
             "signal": d["signal"], "motif": d["motif"], "regime": d["regime"],
             "etat": d["etat"], "force": float(d["force"]), "donnees": d.to_dict(), "df": df,
@@ -81,6 +81,15 @@ def selectionner(resultats: list[dict], n: int) -> tuple[list[dict], list[dict]]
     for a in retenus:
         a["graphique"] = tracer(a["df"], a["ticker"])
     return retenus, autres
+
+
+def suivis_permanents(resultats: list[dict], deja: list[dict]) -> list[dict]:
+    """Instruments marqués « toujours » et absents des signaux détaillés, avec graphique."""
+    vus = {a["ticker"] for a in deja}
+    suivis = [a for a in resultats if a["toujours"] and a["ticker"] not in vus]
+    for a in suivis:
+        a["graphique"] = tracer(a["df"], a["ticker"])
+    return suivis
 
 
 def cmd_analyser(cfg: dict, essai: bool) -> int:
@@ -100,7 +109,8 @@ def cmd_analyser(cfg: dict, essai: bool) -> int:
 
     if signaux:
         retenus, autres = selectionner(signaux, cfg["alertes"]["max_par_mail"])
-        msg = notifier.construire(retenus, cfg["alertes"]["objet_prefixe"], autres=autres)
+        msg = notifier.construire(retenus, cfg["alertes"]["objet_prefixe"], autres=autres,
+                                  suivis=suivis_permanents(resultats, retenus))
         if essai:
             print("\n--- Mail (mode essai, non envoyé) ---")
             print("Objet :", msg["Subject"])
@@ -125,9 +135,11 @@ def cmd_test_mail(cfg: dict) -> int:
         return 1
     for a in resultats:
         a["regime_precedent"] = etat.get(a["ticker"], {}).get("regime")
-    retenus, _ = selectionner(resultats, cfg["alertes"]["max_par_mail"])
+    retenus, _ = selectionner([a for a in resultats if not a["toujours"]],
+                              cfg["alertes"]["max_par_mail"])
     msg = notifier.construire(retenus, cfg["alertes"]["objet_prefixe"],
-                              "Test d'envoi, mouvements les plus forts")
+                              "Test d'envoi, mouvements les plus forts",
+                              suivis=suivis_permanents(resultats, retenus))
     notifier.envoyer(msg)
     print(f"Mail de test envoyé à {msg['To']} ({len(retenus)} instrument(s)).")
     return 0
