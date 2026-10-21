@@ -10,7 +10,7 @@ CFG = tomllib.loads((Path(__file__).resolve().parent.parent / "config.toml").rea
 
 
 def ohlc(close: np.ndarray) -> pd.DataFrame:
-    idx = pd.bdate_range("2020-01-01", periods=len(close))
+    idx = pd.bdate_range("2015-01-01", periods=len(close))
     close = pd.Series(close, index=idx)
     return pd.DataFrame({
         "Open": close.shift(1).fillna(close.iloc[0]),
@@ -22,13 +22,19 @@ def ohlc(close: np.ndarray) -> pd.DataFrame:
 
 
 def evaluer(close: np.ndarray) -> pd.DataFrame:
-    return signals.evaluer(indicators.calculer(ohlc(close), CFG["indicateurs"]), CFG["regles"])
+    df = indicators.calculer(ohlc(close), CFG["indicateurs"], CFG["fond"])
+    return signals.regime(signals.evaluer(df, CFG["regles"]), CFG["regles_fond"])
 
+
+def bruit(n: int, vol: float, graine: int = 0) -> np.ndarray:
+    return np.random.default_rng(graine).normal(0, vol, n)
+
+
+# --- État court terme (descriptif) ---
 
 def test_tendance_haussiere_detectee():
     df = evaluer(100 * 1.003 ** np.arange(300))
     assert df["etat"].iloc[-1] == signals.HAUSSE
-    assert (df["sar"].iloc[-50:] < df["Close"].iloc[-50:]).all()
 
 
 def test_tendance_baissiere_detectee():
@@ -39,20 +45,38 @@ def test_tendance_baissiere_detectee():
     assert df["etat"].iloc[-1] == signals.BAISSE
 
 
-def test_retournement_haussier_et_signal_achat():
-    baisse = 100 * 0.995 ** np.arange(150)
-    hausse = baisse[-1] * 1.006 ** np.arange(1, 100)
-    df = evaluer(np.concatenate([baisse, hausse]))
-    apres = df.iloc[150:]
-    assert (apres["etat"] == signals.RETOURNEMENT_HAUSSIER).any()
-    assert (apres["signal"] == signals.ACHAT).any()
-
-
 def test_stabilite_sur_marche_plat():
-    rng = np.random.default_rng(0)
-    bruit = np.concatenate([rng.normal(0, 0.02, 200), rng.normal(0, 0.002, 100)])
-    df = evaluer(100 * np.exp(np.cumsum(bruit) * 0.1))
+    b = np.concatenate([bruit(200, 0.02), bruit(100, 0.002)])
+    df = evaluer(100 * np.exp(np.cumsum(b) * 0.1))
     assert (df["etat"].iloc[-30:] == signals.STABILITE).any()
+
+
+# --- Régime de fond et signaux ---
+
+def test_hausse_durable_un_seul_achat():
+    rendements = 0.0012 + bruit(800, 0.006)
+    df = evaluer(100 * np.exp(np.cumsum(rendements)))
+    assert (df["signal"] == signals.ACHAT).sum() == 1
+    assert df["regime"].iloc[-1] == signals.HAUSSE
+
+
+def test_krach_declenche_vente_rapide():
+    hausse = 0.0006 + bruit(600, 0.01)
+    krach = np.full(15, -0.025)
+    df = evaluer(100 * np.exp(np.cumsum(np.concatenate([hausse, krach]))))
+    ventes = df.iloc[600:][df["signal"].iloc[600:] == signals.VENTE]
+    assert len(ventes) == 1 and ventes["motif"].iloc[0] == "krach"
+
+
+def test_marche_sans_tendance_peu_de_signaux():
+    df = evaluer(100 * np.exp(np.cumsum(bruit(1500, 0.012, graine=3))))
+    annees = len(df) / 252
+    assert (df["signal"] != "").sum() / annees < 2
+
+
+def test_force_bornee():
+    df = evaluer(100 * np.exp(np.cumsum(0.0006 + bruit(800, 0.01))))
+    assert df["force"].between(0, 100).all()
 
 
 def test_backtest_sans_biais_d_anticipation():

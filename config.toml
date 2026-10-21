@@ -1,24 +1,192 @@
 # Configuration de l'outil d'alertes Bourse-auto.
 # Les tickers suivent la nomenclature Yahoo Finance (suffixe .PA pour Euronext Paris).
+# Composition du CAC 40 vérifiée en octobre 2026 (dernière modification le 22 décembre 2025 :
+# entrée d'Eiffage, sortie d'Edenred). Elle est revue chaque trimestre par Euronext.
+# ArcelorMittal est suivi sur Amsterdam (MT.AS) : la ligne Paris n'est plus alimentée sur Yahoo.
+
+[[instruments]]
+ticker = "^FCHI"
+nom = "Indice CAC 40"
+
+[[instruments]]
+ticker = "WPEA.PA"
+nom = "iShares MSCI World Swap PEA (ETF)"
 
 [[instruments]]
 ticker = "CW8.PA"
 nom = "Amundi MSCI World (ETF)"
 
 [[instruments]]
+ticker = "QQQ"
+nom = "Invesco QQQ, Nasdaq-100 (ETF)"
+
+[[instruments]]
+ticker = "AC.PA"
+nom = "Accor"
+
+[[instruments]]
+ticker = "AI.PA"
+nom = "Air Liquide"
+
+[[instruments]]
+ticker = "AIR.PA"
+nom = "Airbus"
+
+[[instruments]]
+ticker = "MT.AS"
+nom = "ArcelorMittal"
+
+[[instruments]]
+ticker = "CS.PA"
+nom = "AXA"
+
+[[instruments]]
+ticker = "BNP.PA"
+nom = "BNP Paribas"
+
+[[instruments]]
+ticker = "EN.PA"
+nom = "Bouygues"
+
+[[instruments]]
+ticker = "BVI.PA"
+nom = "Bureau Veritas"
+
+[[instruments]]
+ticker = "CAP.PA"
+nom = "Capgemini"
+
+[[instruments]]
+ticker = "CA.PA"
+nom = "Carrefour"
+
+[[instruments]]
+ticker = "ACA.PA"
+nom = "Crédit Agricole"
+
+[[instruments]]
+ticker = "BN.PA"
+nom = "Danone"
+
+[[instruments]]
+ticker = "DSY.PA"
+nom = "Dassault Systèmes"
+
+[[instruments]]
+ticker = "FGR.PA"
+nom = "Eiffage"
+
+[[instruments]]
+ticker = "ENGI.PA"
+nom = "Engie"
+
+[[instruments]]
+ticker = "EL.PA"
+nom = "EssilorLuxottica"
+
+[[instruments]]
+ticker = "ERF.PA"
+nom = "Eurofins Scientific"
+
+[[instruments]]
+ticker = "ENX.PA"
+nom = "Euronext"
+
+[[instruments]]
+ticker = "RMS.PA"
+nom = "Hermès International"
+
+[[instruments]]
+ticker = "KER.PA"
+nom = "Kering"
+
+[[instruments]]
+ticker = "OR.PA"
+nom = "L'Oréal"
+
+[[instruments]]
+ticker = "LR.PA"
+nom = "Legrand"
+
+[[instruments]]
 ticker = "MC.PA"
 nom = "LVMH"
 
 [[instruments]]
-ticker = "QQQ"
-nom = "Invesco QQQ, Nasdaq-100 (ETF)"
+ticker = "ML.PA"
+nom = "Michelin"
+
+[[instruments]]
+ticker = "ORA.PA"
+nom = "Orange"
+
+[[instruments]]
+ticker = "RI.PA"
+nom = "Pernod Ricard"
+
+[[instruments]]
+ticker = "PUB.PA"
+nom = "Publicis Groupe"
+
+[[instruments]]
+ticker = "RNO.PA"
+nom = "Renault"
+
+[[instruments]]
+ticker = "SAF.PA"
+nom = "Safran"
+
+[[instruments]]
+ticker = "SGO.PA"
+nom = "Saint-Gobain"
+
+[[instruments]]
+ticker = "SAN.PA"
+nom = "Sanofi"
+
+[[instruments]]
+ticker = "SU.PA"
+nom = "Schneider Electric"
+
+[[instruments]]
+ticker = "GLE.PA"
+nom = "Société Générale"
+
+[[instruments]]
+ticker = "STLAP.PA"
+nom = "Stellantis"
+
+[[instruments]]
+ticker = "STMPA.PA"
+nom = "STMicroelectronics"
+
+[[instruments]]
+ticker = "HO.PA"
+nom = "Thales"
+
+[[instruments]]
+ticker = "TTE.PA"
+nom = "TotalEnergies"
+
+[[instruments]]
+ticker = "URW.PA"
+nom = "Unibail-Rodamco-Westfield"
+
+[[instruments]]
+ticker = "VIE.PA"
+nom = "Veolia"
+
+[[instruments]]
+ticker = "DG.PA"
+nom = "Vinci"
 
 [donnees]
-# Historique chargé pour l'analyse quotidienne (marge de chauffe des indicateurs incluse).
-periode_analyse = "2y"
+# Historique chargé pour l'analyse quotidienne (marge de chauffe des indicateurs lents incluse).
+periode_analyse = "3y"
 # Historique chargé pour le backtest.
-periode_backtest = "10y"
+periode_backtest = "20y"
 
+# Indicateurs courts : description de l'état du jour et graphique.
 [indicateurs]
 macd_rapide = 12
 macd_lente = 26
@@ -31,26 +199,46 @@ momentum_periode = 10
 adx_periode = 14
 
 [regles]
-# ADX au-dessus duquel le marché est considéré en tendance.
 adx_tendance = 25
-# ADX en dessous duquel le marché peut être considéré stable.
 adx_range = 20
-# Score directionnel minimal (sur 4) pour qualifier une hausse ou une baisse.
 score_tendance = 3
-# Un retournement exige un score opposé d'au moins cette valeur dans la fenêtre précédente.
 score_retournement = 2
 fenetre_retournement = 10
-# Stabilité : largeur des bandes de Bollinger sous ce quantile de son historique récent.
 quantile_compression = 0.3
 fenetre_compression = 120
-# Le passage du SAR au-dessus du prix déclenche une sortie (stop suiveur).
-sortie_sur_sar = true
+
+# Indicateurs lents : régime de fond, seuls à déclencher les alertes ACHAT / VENTE.
+[fond]
+mm_periode = 200
+momentum_periode = 63
+# Équivalent journalier d'un MACD 12/26/9 hebdomadaire.
+macd_rapide = 60
+macd_lente = 130
+macd_signal = 45
+sar_pas = 0.005
+sar_max = 0.05
+volatilite_periode = 63
+
+[regles_fond]
+# Nombre de séances consécutives pendant lesquelles les conditions doivent tenir.
+confirmation_jours = 3
+# Momentum trois mois minimal (%) pour un signal d'achat.
+momentum_achat_min = 0.0
+# Marge (%) sous la moyenne longue pour une vente de tendance.
+marge_vente = 2.0
+# Vente de krach : repli depuis le plus haut trois mois supérieur à k fois la volatilité trois mois.
+krach_k = 1.5
+# Séances minimales entre une vente et un nouvel achat.
+delai_apres_vente = 10
 
 [backtest]
 # Frais par transaction (achat ou vente), en points de base : 10 = 0,10 %.
 frais_bps = 10
 
 [alertes]
-# true : alerte aussi sur tout changement d'état (stabilité, etc.), pas seulement ACHAT/VENTE.
-changements_etat = true
+# Nombre maximal d'instruments détaillés dans un mail, classés par force du signal.
+max_par_mail = 5
+# Force minimale (0 à 100) d'un signal d'ACHAT pour être envoyé. Les VENTES sont toujours
+# envoyées, pour ne jamais manquer la sortie d'une position. 0 = tous les achats (règles backtestées).
+force_min_achat = 0
 objet_prefixe = "[Bourse-auto]"

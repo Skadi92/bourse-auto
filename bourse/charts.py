@@ -1,6 +1,6 @@
 """Graphique de tendance au format PNG, inséré dans le mail d'alerte.
 
-Panneau haut : cours, bandes de Bollinger, SAR parabolique et signaux ACHAT / VENTE.
+Panneau haut : cours, moyenne mobile longue, bandes de Bollinger, SAR et signaux ACHAT / VENTE.
 Panneau bas : histogramme MACD (positif au-dessus de zéro, négatif en dessous).
 """
 
@@ -48,8 +48,8 @@ def _habiller(ax) -> None:
     ax.yaxis.tick_right()
 
 
-def graphique(df: pd.DataFrame, jours: int = 130) -> bytes:
-    """Renvoie le PNG des `jours` dernières séances (130 séances, environ six mois)."""
+def graphique(df: pd.DataFrame, jours: int = 250) -> bytes:
+    """Renvoie le PNG des `jours` dernières séances (250 séances, environ un an)."""
     d = df.iloc[-jours:]
     x = d.index
 
@@ -64,9 +64,12 @@ def graphique(df: pd.DataFrame, jours: int = 130) -> bytes:
     haut.fill_between(x, d["bb_basse"], d["bb_haute"], color=COURS, alpha=0.10,
                       linewidth=0, label="Bandes de Bollinger")
     haut.plot(x, d["Close"], color=COURS, linewidth=1.6, label="Cours")
-    haussier = d["sar_tendance"] == 1
-    haut.scatter(x[haussier], d["sar"][haussier], s=3, color=ATTENUE, label="SAR")
-    haut.scatter(x[~haussier], d["sar"][~haussier], s=3, color=ATTENUE)
+    if "f_mm" in d:
+        haut.plot(x, d["f_mm"], color=ENCRE_SECONDAIRE, linewidth=1.0, linestyle=(0, (4, 2)),
+                  label="MM200")
+    # Le SAR lent est celui qui conditionne les signaux ; à défaut, le SAR standard.
+    sar, nom_sar = (d["f_sar"], "SAR lent") if "f_sar" in d else (d["sar"], "SAR")
+    haut.scatter(x, sar, s=2, color=ATTENUE, label=nom_sar)
 
     achats, ventes = d[d["signal"] == ACHAT], d[d["signal"] == VENTE]
     haut.scatter(achats.index, achats["Low"] * 0.985, marker="^", s=46, color=BON,
@@ -79,18 +82,21 @@ def graphique(df: pd.DataFrame, jours: int = 130) -> bytes:
                   xy=(x[-1], dernier), xytext=(4, 0), textcoords="offset points",
                   va="center", fontsize=8, color=ENCRE, fontweight="bold")
 
-    legende = haut.legend(loc="lower left", bbox_to_anchor=(0, 1.0), ncol=5, frameon=False,
+    legende = haut.legend(loc="lower left", bbox_to_anchor=(0, 1.0), ncol=6, frameon=False,
                           fontsize=7.5, handlelength=1.4, columnspacing=1.2,
                           borderaxespad=0.2, labelcolor=ENCRE_SECONDAIRE)
     for poignee in legende.legend_handles:
         if hasattr(poignee, "set_sizes"):
             poignee.set_sizes([30])
 
-    hist = d["macd_hist"]
-    bas.bar(x, hist, width=0.8, color=[POSITIF if v >= 0 else NEGATIF for v in hist])
+    # Le MACD lent est celui qui conditionne les signaux ; à défaut, le MACD standard.
+    lent = "f_macd_hist" in d
+    hist = d["f_macd_hist"] if lent else d["macd_hist"]
+    bas.bar(x, hist, width=1.0, linewidth=0, color=[POSITIF if v >= 0 else NEGATIF for v in hist])
     bas.axhline(0, color=AXE, linewidth=0.8)
-    bas.set_title("Histogramme MACD", loc="left", fontsize=7.5, color=ENCRE_SECONDAIRE, pad=3)
-    bas.xaxis.set_major_locator(mdates.MonthLocator())
+    bas.set_title("Histogramme MACD lent" if lent else "Histogramme MACD", loc="left",
+                  fontsize=7.5, color=ENCRE_SECONDAIRE, pad=3)
+    bas.xaxis.set_major_locator(mdates.MonthLocator(bymonth=[1, 3, 5, 7, 9, 11]))
     bas.xaxis.set_major_formatter(_format_mois)
 
     tampon = io.BytesIO()

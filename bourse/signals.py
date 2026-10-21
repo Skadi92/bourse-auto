@@ -6,7 +6,8 @@ Chaque indicateur vote dans un sens (+1 haussier, -1 baissier) :
 - momentum : variation positive ou négative sur la période ;
 - Bollinger : clôture au-dessus ou en dessous de la bande médiane.
 Le score directionnel est la somme des votes (de -4 à +4). L'ADX et la largeur des
-bandes de Bollinger qualifient le régime (tendance ou marché stable).
+bandes de Bollinger qualifient l'état court terme (tendance ou marché stable), affiché
+à titre descriptif. Les signaux ACHAT / VENTE viennent du régime de fond (fonction regime).
 """
 
 import numpy as np
@@ -79,18 +80,78 @@ def evaluer(df: pd.DataFrame, r: dict) -> pd.DataFrame:
     chauffe = out[["macd_signal", "bb_milieu", "momentum"]].isna().any(axis=1)
     out.loc[chauffe, "etat"] = NEUTRE
 
-    prec = out["etat"].shift(1)
-    entree_hausse = (out["etat"] == HAUSSE) & ~prec.isin([HAUSSE, RETOURNEMENT_HAUSSIER])
-    entree_baisse = (out["etat"] == BAISSE) & ~prec.isin([BAISSE, RETOURNEMENT_BAISSIER])
-    achat = (out["etat"] == RETOURNEMENT_HAUSSIER) | entree_hausse
-    vente = (out["etat"] == RETOURNEMENT_BAISSIER) | entree_baisse
-    if r.get("sortie_sur_sar", True):
-        bascule_sar = (out["sar_tendance"] == -1) & (out["sar_tendance"].shift(1) == 1)
-        vente |= bascule_sar & ~chauffe
-
-    out["signal"] = np.select([achat, vente], [ACHAT, VENTE], default="")
     out["conviction"] = conviction(out)
     return out
+
+
+def regime(df: pd.DataFrame, rf: dict) -> pd.DataFrame:
+    """Régime de fond et signaux ACHAT / VENTE, réservés aux mouvements d'ampleur.
+
+    Indicateurs lents (moyenne mobile longue, momentum trois mois, MACD et SAR lents) et
+    hystérésis : il faut une confirmation sur plusieurs séances pour changer de régime,
+    et la zone entre les seuils d'entrée et de sortie ne déclenche rien.
+
+    - ACHAT : cours au-dessus de la moyenne longue, momentum lent supérieur au seuil,
+      MACD lent positif et SAR lent haussier, pendant `confirmation_jours` séances ;
+    - VENTE (tendance) : cours sous la moyenne longue diminuée de la marge, momentum lent
+      négatif et MACD lent négatif, pendant `confirmation_jours` séances ;
+    - VENTE (krach) : repli depuis le plus haut récent supérieur à `krach_k` fois la
+      volatilité de la période, sans attendre de confirmation.
+    """
+    out = df.copy()
+    c = out["Close"]
+    cond_achat = (
+        (c > out["f_mm"])
+        & (out["f_momentum"] > rf["momentum_achat_min"])
+        & (out["f_macd_hist"] > 0)
+        & (out["f_sar_tendance"] == 1)
+    ).to_numpy()
+    cond_vente = (
+        (c < out["f_mm"] * (1 - rf["marge_vente"] / 100))
+        & (out["f_momentum"] < 0)
+        & (out["f_macd_hist"] < 0)
+    ).to_numpy()
+    krach = (out["f_repli"] <= -rf["krach_k"] * out["f_volatilite"]).to_numpy()
+    pret = out["f_mm"].notna().to_numpy()
+
+    n, conf, delai = len(out), rf["confirmation_jours"], rf["delai_apres_vente"]
+    etats = np.full(n, NEUTRE, dtype=object)
+    signaux = np.full(n, "", dtype=object)
+    motifs = np.full(n, "", dtype=object)
+    courant, serie_achat, serie_vente, derniere_vente = NEUTRE, 0, 0, -10**9
+
+    for t in range(n):
+        if not pret[t]:
+            continue
+        serie_achat = serie_achat + 1 if cond_achat[t] else 0
+        serie_vente = serie_vente + 1 if cond_vente[t] else 0
+        if courant != BAISSE and krach[t]:
+            courant, signaux[t], motifs[t] = BAISSE, VENTE, "krach"
+            derniere_vente, serie_achat = t, 0
+        elif courant != BAISSE and serie_vente >= conf:
+            courant, signaux[t], motifs[t] = BAISSE, VENTE, "tendance"
+            derniere_vente, serie_achat = t, 0
+        elif courant != HAUSSE and serie_achat >= conf and t - derniere_vente >= delai:
+            courant, signaux[t], motifs[t] = HAUSSE, ACHAT, "tendance"
+        etats[t] = courant
+
+    out["regime"], out["signal"], out["motif"] = etats, signaux, motifs
+    out["force"] = force(out)
+    return out
+
+
+def force(out: pd.DataFrame) -> pd.Series:
+    """Force du mouvement de 0 à 100, pour classer les signaux entre instruments.
+
+    Momentum lent et écart à la moyenne longue sont exprimés en multiples de la volatilité
+    de l'instrument, pour comparer un ETF peu volatil et une action nerveuse.
+    """
+    vol = out["f_volatilite"].replace(0, np.nan)
+    z_momentum = (out["f_momentum"] / vol).abs()
+    z_ecart = ((out["Close"] / out["f_mm"] - 1) * 100 / vol).abs()
+    ampleur = ((z_momentum + z_ecart) / 2 / 2).clip(upper=1)
+    tendance = (out["adx"].clip(upper=50) / 50).fillna(0)
+    return (100 * (0.7 * ampleur + 0.3 * tendance)).fillna(0).round(0)
 
 
 def conviction(out: pd.DataFrame) -> pd.Series:

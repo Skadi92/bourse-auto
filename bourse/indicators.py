@@ -90,9 +90,31 @@ def adx(high: pd.Series, low: pd.Series, close: pd.Series, periode: int) -> pd.S
     return wilder(dx.fillna(0), periode)
 
 
-def calculer(df: pd.DataFrame, p: dict) -> pd.DataFrame:
+def calculer_fond(df: pd.DataFrame, f: dict) -> pd.DataFrame:
+    """Indicateurs lents du régime de fond (préfixe f_), pour ne capter que les gros mouvements."""
+    close = df["Close"]
+    out = pd.DataFrame(index=df.index)
+    out["f_mm"] = close.rolling(f["mm_periode"]).mean()
+    out["f_momentum"] = momentum(close, f["momentum_periode"])
+    m = macd(close, f["macd_rapide"], f["macd_lente"], f["macd_signal"])
+    out["f_macd_hist"] = m["macd_hist"]
+    s = parabolic_sar(df["High"], df["Low"], f["sar_pas"], f["sar_max"])
+    out["f_sar"], out["f_sar_tendance"] = s["sar"], s["sar_tendance"]
+    # Volatilité sur la période, ramenée à l'horizon de la période (et non annualisée).
+    rendements = close.pct_change()
+    out["f_volatilite"] = rendements.rolling(f["volatilite_periode"]).std() * np.sqrt(
+        f["volatilite_periode"]
+    ) * 100
+    plus_haut = close.rolling(f["volatilite_periode"], min_periods=1).max()
+    out["f_repli"] = (close / plus_haut - 1) * 100
+    return out
+
+
+def calculer(df: pd.DataFrame, p: dict, f: dict | None = None) -> pd.DataFrame:
     """Ajoute tous les indicateurs au DataFrame OHLC (colonnes Open, High, Low, Close)."""
     out = df.copy()
+    if f is not None:
+        out = out.join(calculer_fond(df, f))
     out = out.join(macd(df["Close"], p["macd_rapide"], p["macd_lente"], p["macd_signal"]))
     out = out.join(bollinger(df["Close"], p["bollinger_periode"], p["bollinger_ecarts"]))
     out = out.join(parabolic_sar(df["High"], df["Low"], p["sar_pas"], p["sar_max"]))
