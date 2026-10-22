@@ -60,7 +60,7 @@ Les instruments, les paramètres et les seuils se règlent dans `config.toml`. L
 4. Dans l'onglet Actions, lancez « Alertes bourse » à la main avec la commande `test-mail`. Elle envoie un mail au format réel avec les cinq actifs dont le mouvement est le plus fort, sans modifier l'état mémorisé, ce qui valide les secrets Gmail même sans signal du jour.
 5. Lancez ensuite la commande `analyser` avec `essai` coché, puis sans.
 
-Le workflow s'exécute du lundi au vendredi à 22 h 30 UTC. Une bougie de la séance en cours n'est jamais analysée.
+Le workflow s'exécute du lundi au vendredi à 22 h 40, heure de Paris, après la clôture de New York. Les crons GitHub étant en UTC, deux créneaux sont déclarés (20 h 40 et 21 h 40 UTC) et seul celui de la saison en cours (heure d'été ou d'hiver) est exécuté. GitHub peut retarder un déclenchement planifié en période de forte charge, parfois de plus d'une heure. Une bougie de la séance en cours n'est jamais analysée.
 
 ## Limites connues
 

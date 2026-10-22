@@ -2,9 +2,13 @@ name: Alertes bourse
 
 on:
   schedule:
-    # Du lundi au vendredi à 22 h 30 UTC, après la clôture d'Euronext et de New York.
-    # GitHub peut retarder un déclenchement planifié de plusieurs dizaines de minutes.
-    - cron: "30 22 * * 1-5"
+    # Les crons GitHub sont en UTC. Objectif : 22 h 40 heure de Paris, du lundi au vendredi,
+    # après la clôture de New York (22 h à Paris). Deux créneaux couvrent l'heure d'été
+    # (20 h 40 UTC) et l'heure d'hiver (21 h 40 UTC) ; le job « creneau » ne laisse passer
+    # que celui de la saison en cours. La minute 40 évite les pics de charge du début
+    # d'heure et de la demi-heure, pendant lesquels GitHub retarde les déclenchements.
+    - cron: "40 20 * * 1-5"
+    - cron: "40 21 * * 1-5"
   workflow_dispatch:
     inputs:
       commande:
@@ -25,7 +29,30 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  creneau:
+    runs-on: ubuntu-latest
+    outputs:
+      lancer: ${{ steps.verif.outputs.lancer }}
+    steps:
+      - name: Choix du créneau selon l'heure d'été ou d'hiver à Paris
+        id: verif
+        run: |
+          if [ "${{ github.event_name }}" != "schedule" ]; then
+            echo "lancer=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          # +0200 en heure d'été, +0100 en heure d'hiver.
+          if [ "$(TZ=Europe/Paris date +%z)" = "+0200" ]; then attendu="40 20 * * 1-5"; else attendu="40 21 * * 1-5"; fi
+          if [ "${{ github.event.schedule }}" = "$attendu" ]; then
+            echo "lancer=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "lancer=false" >> "$GITHUB_OUTPUT"
+            echo "Créneau de l'autre saison (${{ github.event.schedule }}), exécution ignorée."
+          fi
+          echo "Heure de Paris : $(TZ=Europe/Paris date '+%d/%m/%Y %H:%M')"
+
   alertes:
+    needs: creneau
+    if: needs.creneau.outputs.lancer == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -67,5 +94,5 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add etat/etat.json
-          git diff --cached --quiet || git commit -m "État des alertes du $(date -u +%F)"
+          git diff --cached --quiet || git commit -m "État des alertes du $(TZ=Europe/Paris date +%F)"
           git push
