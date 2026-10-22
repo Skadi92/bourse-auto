@@ -8,6 +8,7 @@ import tomllib
 from pathlib import Path
 
 from . import backtest, charts, data, indicators, notifier, signals
+from .frais import ModeleFrais
 
 RACINE = Path(__file__).resolve().parent.parent
 FICHIER_ETAT = RACINE / "etat" / "etat.json"
@@ -159,7 +160,8 @@ def cmd_backtest(cfg: dict, periode: str | None) -> int:
         if len(df) < 2:
             print(f"[ERREUR] {ticker} : historique trop court", file=sys.stderr)
             continue
-        r, _ = backtest.executer(df, cfg["backtest"]["frais_bps"])
+        frais = ModeleFrais(cfg["frais"], ticker, inst.get("ttf", False))
+        r, _ = backtest.executer(df, frais, cfg["backtest"]["montant_ordre"])
         annees = max((r.fin - r.debut).days / 365.25, 1 / 365.25)
         print(f"\n{inst.get('nom', ticker)} ({ticker}), {r.debut:%d/%m/%Y} au {r.fin:%d/%m/%Y}")
         print(f"  {'':24}{'Stratégie':>10}{'Achat-cons.':>13}")
@@ -168,6 +170,8 @@ def cmd_backtest(cfg: dict, periode: str | None) -> int:
         print(f"  {'Drawdown maximal':24}{pct(r.drawdown_max_strategie):>10}{pct(r.drawdown_max_achat_conservation):>13}")
         print(f"  Trades : {r.nb_trades} ({r.nb_trades / annees:.1f} par an), "
               f"taux de réussite : {pct(r.taux_reussite).strip()}, exposition : {pct(r.exposition).strip()}")
+        print(f"  Frais payés : {r.frais_total:,.2f} € pour des achats de "
+              f"{cfg['backtest']['montant_ordre']:,} €".replace(",", " ").replace(".", ","))
     return 0
 
 

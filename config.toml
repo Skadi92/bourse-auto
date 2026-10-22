@@ -2,6 +2,8 @@
 # Les tickers suivent la nomenclature Yahoo Finance (suffixe .PA pour Euronext Paris).
 # Composition du CAC 40 vérifiée en octobre 2026 (dernière modification le 22 décembre 2025 :
 # entrée d'Eiffage, sortie d'Edenred). Elle est revue chaque trimestre par Euronext.
+# ttf = true : société française soumise à la taxe sur les transactions financières (liste BOFiP
+# BOI-ANNX-000467-20251217, au 1er décembre 2025, mise à jour chaque année).
 # toujours = true : l'instrument figure dans chaque mail envoyé, même sans signal.
 # ArcelorMittal est suivi sur Amsterdam (MT.AS) : la ligne Paris n'est plus alimentée sur Yahoo.
 
@@ -27,10 +29,12 @@ toujours = true
 [[instruments]]
 ticker = "AC.PA"
 nom = "Accor"
+ttf = true
 
 [[instruments]]
 ticker = "AI.PA"
 nom = "Air Liquide"
+ttf = true
 
 [[instruments]]
 ticker = "AIR.PA"
@@ -43,50 +47,62 @@ nom = "ArcelorMittal"
 [[instruments]]
 ticker = "CS.PA"
 nom = "AXA"
+ttf = true
 
 [[instruments]]
 ticker = "BNP.PA"
 nom = "BNP Paribas"
+ttf = true
 
 [[instruments]]
 ticker = "EN.PA"
 nom = "Bouygues"
+ttf = true
 
 [[instruments]]
 ticker = "BVI.PA"
 nom = "Bureau Veritas"
+ttf = true
 
 [[instruments]]
 ticker = "CAP.PA"
 nom = "Capgemini"
+ttf = true
 
 [[instruments]]
 ticker = "CA.PA"
 nom = "Carrefour"
+ttf = true
 
 [[instruments]]
 ticker = "ACA.PA"
 nom = "Crédit Agricole"
+ttf = true
 
 [[instruments]]
 ticker = "BN.PA"
 nom = "Danone"
+ttf = true
 
 [[instruments]]
 ticker = "DSY.PA"
 nom = "Dassault Systèmes"
+ttf = true
 
 [[instruments]]
 ticker = "FGR.PA"
 nom = "Eiffage"
+ttf = true
 
 [[instruments]]
 ticker = "ENGI.PA"
 nom = "Engie"
+ttf = true
 
 [[instruments]]
 ticker = "EL.PA"
 nom = "EssilorLuxottica"
+ttf = true
 
 [[instruments]]
 ticker = "ERF.PA"
@@ -99,62 +115,77 @@ nom = "Euronext"
 [[instruments]]
 ticker = "RMS.PA"
 nom = "Hermès International"
+ttf = true
 
 [[instruments]]
 ticker = "KER.PA"
 nom = "Kering"
+ttf = true
 
 [[instruments]]
 ticker = "OR.PA"
 nom = "L'Oréal"
+ttf = true
 
 [[instruments]]
 ticker = "LR.PA"
 nom = "Legrand"
+ttf = true
 
 [[instruments]]
 ticker = "MC.PA"
 nom = "LVMH"
+ttf = true
 
 [[instruments]]
 ticker = "ML.PA"
 nom = "Michelin"
+ttf = true
 
 [[instruments]]
 ticker = "ORA.PA"
 nom = "Orange"
+ttf = true
 
 [[instruments]]
 ticker = "RI.PA"
 nom = "Pernod Ricard"
+ttf = true
 
 [[instruments]]
 ticker = "PUB.PA"
 nom = "Publicis Groupe"
+ttf = true
 
 [[instruments]]
 ticker = "RNO.PA"
 nom = "Renault"
+ttf = true
 
 [[instruments]]
 ticker = "SAF.PA"
 nom = "Safran"
+ttf = true
 
 [[instruments]]
 ticker = "SGO.PA"
 nom = "Saint-Gobain"
+ttf = true
 
 [[instruments]]
 ticker = "SAN.PA"
 nom = "Sanofi"
+ttf = true
 
 [[instruments]]
 ticker = "SU.PA"
 nom = "Schneider Electric"
+ttf = true
 
 [[instruments]]
 ticker = "GLE.PA"
 nom = "Société Générale"
+ttf = true
 
 [[instruments]]
 ticker = "STLAP.PA"
@@ -167,22 +198,27 @@ nom = "STMicroelectronics"
 [[instruments]]
 ticker = "HO.PA"
 nom = "Thales"
+ttf = true
 
 [[instruments]]
 ticker = "TTE.PA"
 nom = "TotalEnergies"
+ttf = true
 
 [[instruments]]
 ticker = "URW.PA"
 nom = "Unibail-Rodamco-Westfield"
+ttf = true
 
 [[instruments]]
 ticker = "VIE.PA"
 nom = "Veolia"
+ttf = true
 
 [[instruments]]
 ticker = "DG.PA"
 nom = "Vinci"
+ttf = true
 
 [donnees]
 # Historique chargé pour l'analyse quotidienne (marge de chauffe des indicateurs lents incluse).
@@ -201,6 +237,9 @@ sar_pas = 0.02
 sar_max = 0.2
 momentum_periode = 10
 adx_periode = 14
+rsi_periode = 14
+# Moyennes mobiles tracées sur le graphique (sans effet sur les signaux).
+mm_graphique = [20, 50]
 
 [regles]
 adx_tendance = 25
@@ -236,8 +275,24 @@ krach_k = 1.5
 delai_apres_vente = 10
 
 [backtest]
-# Frais par transaction (achat ou vente), en points de base : 10 = 0,10 %.
-frais_bps = 10
+# Montant de chaque ordre d'achat, en euros. La vente porte sur la valeur atteinte par la ligne.
+montant_ordre = 2000
+
+# Barème Bourse Direct, compte-titres et PEA, applicable depuis le 6 janvier 2026.
+# paliers = [montant maximal inclus en €, frais fixe en €] ; au-delà, % de la totalité de l'ordre.
+[frais]
+# Taxe sur les transactions financières, à l'achat des titres marqués ttf = true.
+ttf_pct = 0.4
+
+[frais.euronext]
+paliers = [[500, 0.99], [1000, 1.90], [2000, 2.90], [4400, 3.80]]
+au_dela_pct = 0.09
+
+[frais.us]
+paliers = [[10000, 8.50]]
+au_dela_pct = 0.09
+# Commission de change Bourse Direct, à chaque opération (achat et vente).
+change_pct = 0.08
 
 [alertes]
 # Nombre maximal d'instruments détaillés dans un mail, classés par force du signal.

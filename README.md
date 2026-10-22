@@ -24,19 +24,20 @@ Les indicateurs standards (MACD 12/26/9, Bollinger 20, SAR, momentum 10 jours, A
 
 ### Mail
 
-Un mail n'est envoyé que les jours où au moins un signal ACHAT ou VENTE apparaît. Seuls les cinq signaux les plus forts sont détaillés. Les autres signaux du jour sont cités ensuite. Les instruments marqués `toujours = true` dans `config.toml` (les ETF WPEA, CW8 et QQQ) figurent dans chaque mail envoyé, dans une section « ETF suivis », même sans signal. Chaque instrument est présenté avec ses statistiques à gauche et un graphique sur un an à droite (cours, MM200, bandes de Bollinger, SAR lent, signaux, MACD lent). Le paramètre `force_min_achat` permet d'écarter les achats les plus faibles ; les ventes passent toujours. Le fichier `etat/etat.json`, mis à jour par le workflow, évite les doublons.
+Un mail n'est envoyé que les jours où au moins un signal ACHAT ou VENTE apparaît. Seuls les cinq signaux les plus forts sont détaillés. Les autres signaux du jour sont cités ensuite. Les instruments marqués `toujours = true` dans `config.toml` (les ETF WPEA, CW8 et QQQ) figurent dans chaque mail envoyé, dans une section « ETF suivis », même sans signal. Chaque instrument est présenté avec ses statistiques à gauche et un graphique sur trois mois à droite : cours, MM20, MM50, bandes de Bollinger, SAR (0,02) et signaux, puis MACD (12, 26, 9) avec sa ligne de signal, puis RSI (14). Le graphique utilise les indicateurs standards pour lire le court terme ; les alertes restent pilotées par le régime de fond. Le paramètre `force_min_achat` permet d'écarter les achats les plus faibles ; les ventes passent toujours. Le fichier `etat/etat.json`, mis à jour par le workflow, évite les doublons.
 
-### Résultats du backtest (20 ans, 44 actifs, frais de 0,10 % par ordre)
+### Résultats du backtest (20 ans, 44 actifs, frais Bourse Direct, achats de 2 000 €)
 
 Médianes sur les 44 actifs, mesurées en octobre 2026 :
 
 | | Stratégie | Achat-conservation |
 |---|---|---|
-| Rendement annualisé | 4,5 % | 8,1 % |
-| Perte maximale | -46,9 % | -59,2 % |
+| Rendement annualisé | 3,6 % | 8,0 % |
+| Perte maximale | -47,5 % | -59,3 % |
 | Allers-retours par an | 0,9 | 0 |
+| Frais par aller-retour | 14 € (action française), 6 € (autre Euronext), 20 € (QQQ) | un achat |
 
-Sur l'indice et les ETF, la protection est nette (CAC 40 : perte maximale -30 % contre -57 % ; Nasdaq-100 : -29 % contre -53 %), pour un rendement inférieur de 1 à 3 points par an. Sur les actions isolées, le rendement est inférieur dans la majorité des cas. La stratégie est une assurance contre les krachs, qui a un coût, pas une méthode pour battre le marché.
+Sur l'indice et les ETF, la protection est nette (CAC 40 : perte maximale -31 % contre -57 % ; Nasdaq-100 : -29 % contre -53 %), pour un rendement inférieur de 1,5 à 5 points par an. Les frais réels coûtent environ 0,7 point de rendement annuel par rapport à un backtest sans frais, surtout à cause de la TTF de 0,4 % sur les achats d'actions françaises. Sur les actions isolées, le rendement est inférieur dans la majorité des cas. La stratégie est une assurance contre les krachs, qui a un coût, pas une méthode pour battre le marché.
 
 ## Utilisation locale
 
@@ -59,11 +60,11 @@ Les instruments, les paramètres et les seuils se règlent dans `config.toml`. L
 4. Dans l'onglet Actions, lancez « Alertes bourse » à la main avec la commande `test-mail`. Elle envoie un mail au format réel avec les cinq actifs dont le mouvement est le plus fort, sans modifier l'état mémorisé, ce qui valide les secrets Gmail même sans signal du jour.
 5. Lancez ensuite la commande `analyser` avec `essai` coché, puis sans.
 
-Le workflow s'exécute du lundi au vendredi à 22 h 30 UTC. Une bougie de la séance en cours n'est jamais analysée.
+Le workflow s'exécute du lundi au vendredi à 22 h 40, heure de Paris, après la clôture de New York. Les crons GitHub étant en UTC, deux créneaux sont déclarés (20 h 40 et 21 h 40 UTC) et seul celui de la saison en cours (heure d'été ou d'hiver) est exécuté. GitHub peut retarder un déclenchement planifié en période de forte charge, parfois de plus d'une heure. Une bougie de la séance en cours n'est jamais analysée.
 
 ## Limites connues
 
 - yfinance n'est pas une API officielle : il peut cesser de fonctionner ou renvoyer des données incomplètes. Le fichier `bourse/data.py` est le seul à modifier pour changer de source.
 - GitHub peut retarder les déclenchements planifiés. Il désactive aussi les workflows planifiés des dépôts sans activité pendant 60 jours (règle documentée pour les dépôts publics, à vérifier pour un dépôt privé). Les commits quotidiens de l'état devraient suffire à maintenir l'activité.
 - La composition du CAC 40 est revue chaque trimestre par Euronext : la liste de `config.toml` est à mettre à jour à la main après chaque revue (mars, juin, septembre, décembre). `^FCHI` est un indice de prix, hors dividendes : il sous-estime le rendement réel.
-- Le backtest est long uniquement. Il exécute les ordres à l'ouverture du lendemain et compte des frais fixes. Il ne modélise ni le glissement de prix ni la fiscalité.
+- Le backtest est long uniquement. Il exécute les ordres à l'ouverture du lendemain et applique le barème Bourse Direct du 6 janvier 2026 (section `[frais]` de `config.toml`) et la TTF actuelle à toute la période, y compris les années où ils étaient différents. Il ne modélise ni le glissement de prix, ni l'écart de change sur QQQ au-delà de la commission, ni la fiscalité.

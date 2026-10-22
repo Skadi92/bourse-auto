@@ -84,6 +84,17 @@ def test_backtest_sans_biais_d_anticipation():
     df = ohlc(np.linspace(100, 120, 10))
     df["signal"] = ""
     df.iloc[3, df.columns.get_loc("signal")] = signals.ACHAT
-    _, detail = backtest.executer(df, frais_bps=0)
+    _, detail = backtest.executer(df)
     assert detail["position"].iloc[3] == 0
     assert detail["position"].iloc[4] == 1
+
+
+def test_frais_bourse_direct():
+    from bourse.frais import ModeleFrais
+    action_fr = ModeleFrais(CFG["frais"], "MC.PA", ttf=True)
+    assert action_fr.cout(2000, achat=True) == 2.90 + 8.0  # courtage + TTF 0,4 %
+    assert action_fr.cout(2000, achat=False) == 2.90
+    assert action_fr.cout(2500, achat=False) == 3.80
+    assert round(action_fr.cout(5000, achat=False), 2) == 4.50  # 0,09 % dès le premier euro
+    etf_us = ModeleFrais(CFG["frais"], "QQQ", ttf=False)
+    assert round(etf_us.cout(2000, achat=True), 2) == round(8.50 + 1.60, 2)  # courtage + change
