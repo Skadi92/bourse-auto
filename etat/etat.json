@@ -1,221 +1,221 @@
 {
   "CW8.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "HAUSSE",
     "signal": ""
   },
   "MC.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "BAISSE",
     "signal": ""
   },
   "QQQ": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "HAUSSE",
     "signal": ""
   },
   "^FCHI": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "BAISSE",
     "signal": ""
   },
   "WPEA.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "HAUSSE",
     "signal": ""
   },
   "AC.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "BAISSE",
     "signal": ""
   },
   "AI.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "HAUSSE",
     "signal": ""
   },
   "AIR.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "HAUSSE",
     "signal": ""
   },
   "MT.AS": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "HAUSSE",
     "signal": ""
   },
   "CS.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "HAUSSE",
     "signal": ""
   },
   "BNP.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "BAISSE",
     "signal": ""
   },
   "EN.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "BAISSE",
     "signal": ""
   },
   "BVI.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "HAUSSE",
     "signal": ""
   },
   "CAP.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "HAUSSE",
     "signal": ""
   },
   "CA.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "BAISSE",
-    "signal": "VENTE"
+    "signal": ""
   },
   "ACA.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "BAISSE",
     "signal": ""
   },
   "BN.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "BAISSE",
     "signal": ""
   },
   "DSY.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "HAUSSE",
     "signal": ""
   },
   "FGR.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "BAISSE",
     "signal": ""
   },
   "ENGI.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "BAISSE",
     "signal": ""
   },
   "EL.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "BAISSE",
     "signal": ""
   },
   "ERF.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "HAUSSE",
     "signal": ""
   },
   "ENX.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "HAUSSE",
     "signal": ""
   },
   "RMS.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "BAISSE",
     "signal": ""
   },
   "KER.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "BAISSE",
     "signal": ""
   },
   "OR.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "HAUSSE",
     "signal": ""
   },
   "LR.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "BAISSE",
     "signal": ""
   },
   "ML.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "HAUSSE",
     "signal": ""
   },
   "ORA.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "BAISSE",
     "signal": ""
   },
   "RI.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "HAUSSE",
     "signal": ""
   },
   "PUB.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "HAUSSE",
     "signal": ""
   },
   "RNO.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "HAUSSE",
     "signal": ""
   },
   "SAF.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "BAISSE",
-    "signal": "VENTE"
+    "signal": ""
   },
   "SGO.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "BAISSE",
     "signal": ""
   },
   "SAN.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "BAISSE",
     "signal": ""
   },
   "SU.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "BAISSE",
     "signal": ""
   },
   "GLE.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "BAISSE",
     "signal": ""
   },
   "STLAP.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "BAISSE",
     "signal": ""
   },
   "STMPA.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "BAISSE",
     "signal": ""
   },
   "HO.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "BAISSE",
     "signal": ""
   },
   "TTE.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "HAUSSE",
     "signal": ""
   },
   "URW.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "BAISSE",
     "signal": ""
   },
   "VIE.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "BAISSE",
     "signal": ""
   },
   "DG.PA": {
-    "date": "2026-10-23",
+    "date": "2026-10-26",
     "regime": "BAISSE",
     "signal": ""
   }
